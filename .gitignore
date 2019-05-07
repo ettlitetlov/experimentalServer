@@ -1,0 +1,11 @@
+# Ignore node_modules, the person running this stuff will have to install that him/herself FFS
+node_modules/
+
+# Ignore all types of FITS-data
+.fits
+
+# Ignore FITSdata folder just in case
+FITSdata/
+
+# Ignore WSA folder just in case
+WSA/
