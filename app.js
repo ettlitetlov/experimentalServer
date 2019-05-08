@@ -4,7 +4,6 @@ var Client = require('ftp');
 const zlib = require('zlib');
 
 // Reading FITS?
-import { Fits, Hdu } from "@hscmap/fits"
 
 // Auxiliary for external requests
 var request = require('request');
@@ -69,29 +68,38 @@ app.get('/', function (req, res) {
 // Testing for getting FITS-data from GONG's website.
 // DISABLED FOR NOW, SO we dont fetch it again, the ftp server is real slow
 // Estimated time you ask, about 30 minutes for 30 days.
- /*app.get('/ftpTest', (req,res,next) => {
+
+app.get('/ftpTest', (req,res,next) => {
   var c = new Client()
   var cProperties = {
     host: "gong2.nso.edu"
   }
-
-  let testString = "201905";
+  let numberOfDays = 3;
+  let today = new Date();
+  let dateYYYYMM = today.getFullYear().toString() + "0" + (today.getMonth() + 1).toString();
+  console.log(dateYYYYMM);
   let listOfThirtyEntries = [];
   
   c.connect(cProperties);
 
   console.log("Connected!");
 
-  c.list(`QR/zqs/${testString}`, (err, list) => {
+  c.list(`QR/zqs/${dateYYYYMM}`, (err, list) => {
     if(err)
       res.send("error: " + err);
     else{
-      list.map( index => {
-        listOfThirtyEntries.push(index.name);
+      // This little things is to read the last entry first
+      list.slice(0).reverse().map( index => {
+        while(listOfThirtyEntries.length < numberOfDays){
+          listOfThirtyEntries.push(index.name);
+        }
       })
+      if(!fs.existsSync(`./FITSdata/`))
+        fs.mkdirSync(`./FITSdata/`);
     }
-    if(listOfThirtyEntries.length < 30){
-      const prevIndex = getPreviousMonth(testString);
+    while(listOfThirtyEntries.length < numberOfDays){
+      const prevIndex = getPreviousMonth(dateYYYYMM);
+      dateYYYYMM = prevIndex;
       let prevMonth = [];
       c.list(`QR/zqs/${prevIndex}`, (subErr, subList) => {
         if(subErr){
@@ -101,51 +109,16 @@ app.get('/', function (req, res) {
           subList.map( subIndex => {
             prevMonth.push(subIndex.name);
           })
-          while(prevMonth.length > 0 && listOfThirtyEntries.length < 30){
+          while(prevMonth.length > 0 && listOfThirtyEntries.length < numberOfDays){
             listOfThirtyEntries.unshift(prevMonth.pop());
           }
-          let monthlyObject = Object.assign({}, listOfThirtyEntries);
-
-          let counter = 0;
-          for(var it in monthlyObject){
-            const val = monthlyObject[it];
-            const parentDir = "20" + Math.floor(parseInt(val.match(/[0-9]+/g))/100);
-            console.log(parentDir);
-            c.list(`QR/zqs/${parentDir}/${val}`, (hErr, hours) => {
-              if(hErr) res.send(hErr)
-              else{
-                monthlyObject[it] = {
-                  "day": val,
-                  "timeSteps": []
-                }
-                hours.map(hIndex => {
-                  monthlyObject[it].timeSteps.push(hIndex.name);
-                  c.get(`QR/zqs/${parentDir}/${val}/${hIndex.name}`, (getError, stream) =>{
-                    if (getError) throw getError;
-                    if(!fs.existsSync(`./FITSdata/${val}`))
-                      fs.mkdirSync(`./FITSdata/${val}`);
-                
-                    stream.once('close', function() { c.end(); });
-                    stream.pipe(fs.createWriteStream(`FITSdata/${val}/${hIndex.name}`));
-                  
-                  })
-                })
-              }
-            })
-            
-            if(counter == listOfThirtyEntries.length){
-              res.send("Donezo!")
-            }
-            else{
-              counter++;
-            }
-          }
-
+          fetchFTPfiles(c,listOfThirtyEntries);
         }
       })
     }
+    fetchFTPfiles(c,listOfThirtyEntries);
   })
-})  */
+})
 
 // Endpoint to delete the directory with all fitsdata
 app.get('/deleteAllFrknData', (req,res,next) => {
@@ -183,6 +156,44 @@ function unzipDirInPlaceAsync(dir){
   });
 }
 
+function fetchFTPfiles(c,listOfDays){
+  let monthlyObject = Object.assign({}, listOfDays);
+
+  let counter = 0;
+  for(var it in monthlyObject){
+    const val = monthlyObject[it];
+    const parentDir = "20" + Math.floor(parseInt(val.match(/[0-9]+/g))/100);
+    console.log(parentDir);
+    c.list(`QR/zqs/${parentDir}/${val}`, (hErr, hours) => {
+      if(hErr) res.send(hErr)
+      else{
+        monthlyObject[it] = {
+          "day": val,
+          "timeSteps": []
+        }
+        hours.map(hIndex => {
+          monthlyObject[it].timeSteps.push(hIndex.name);
+          c.get(`QR/zqs/${parentDir}/${val}/${hIndex.name}`, (getError, stream) =>{
+            if (getError) throw getError;
+            if(!fs.existsSync(`./FITSdata/${val}`))
+              fs.mkdirSync(`./FITSdata/${val}`);
+            stream.once('close', function() { c.end(); });
+            stream.pipe(fs.createWriteStream(`FITSdata/${val}/${hIndex.name}`));
+          })
+        })
+      }
+    })
+    
+    if(counter == listOfDays.length){
+      res.send("Donezo!")
+    }
+    else{
+      counter++;
+    }
+  }
+
+}
+
 // Code snippet to unzip and remove all .gz files from the directory
 // const directory = fs.readdirSync('./FITSdata/');
 // directory.map( file => {
@@ -208,7 +219,5 @@ function getPreviousMonth(currMonth){
   }
   
 }
-
-doSomethingWithFITS();
 
 app.listen(port, () => console.log(`Example app listening on port ${port}!`))
