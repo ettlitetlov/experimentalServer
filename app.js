@@ -74,10 +74,9 @@ app.get('/ftpTest', (req,res,next) => {
   var cProperties = {
     host: "gong2.nso.edu"
   }
-  let numberOfDays = 3;
+  let numberOfDays = 30;
   let today = new Date();
   let dateYYYYMM = today.getFullYear().toString() + "0" + (today.getMonth() + 1).toString();
-  console.log(dateYYYYMM);
   let listOfThirtyEntries = [];
   
   c.connect(cProperties);
@@ -89,15 +88,14 @@ app.get('/ftpTest', (req,res,next) => {
       res.send("error: " + err);
     else{
       // This little things is to read the last entry first
-      list.slice(0).reverse().map( index => {
-        while(listOfThirtyEntries.length < numberOfDays){
+      list.reverse().map( index => {
           listOfThirtyEntries.push(index.name);
-        }
       })
+      listOfThirtyEntries.reverse();
       if(!fs.existsSync(`./FITSdata/`))
         fs.mkdirSync(`./FITSdata/`);
     }
-    while(listOfThirtyEntries.length < numberOfDays){
+    if(listOfThirtyEntries.length < numberOfDays){
       const prevIndex = getPreviousMonth(dateYYYYMM);
       dateYYYYMM = prevIndex;
       let prevMonth = [];
@@ -116,7 +114,9 @@ app.get('/ftpTest', (req,res,next) => {
         }
       })
     }
-    fetchFTPfiles(c,listOfThirtyEntries);
+    else{
+      fetchFTPfiles(c,listOfThirtyEntries);
+    }
   })
 })
 
@@ -158,12 +158,12 @@ function unzipDirInPlaceAsync(dir){
 
 function fetchFTPfiles(c,listOfDays){
   let monthlyObject = Object.assign({}, listOfDays);
-
+  console.log(listOfDays);
   let counter = 0;
   for(var it in monthlyObject){
     const val = monthlyObject[it];
     const parentDir = "20" + Math.floor(parseInt(val.match(/[0-9]+/g))/100);
-    console.log(parentDir);
+    //console.log(parentDir, val);
     c.list(`QR/zqs/${parentDir}/${val}`, (hErr, hours) => {
       if(hErr) res.send(hErr)
       else{
@@ -210,7 +210,7 @@ function getPreviousMonth(currMonth){
   let intMonth = parseInt(currMonth)%100;
 
   if(intMonth == 1){
-    let year = parsInt(currMonth)%10000;
+    let year = parseInt(currMonth)%10000;
     year = year -1;
     return "20".concat('', [year.toString(), "12"]);
   }
