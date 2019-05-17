@@ -71,9 +71,14 @@ app.get('/getmeafitsimage', (req,res,next) => {
   let listOfFiles = [];
   if(fs.existsSync(fitsDir)){
     fs.readdirSync(fitsDir).map(subDir => {
-      fs.readdirSync(`${fitsDir}/${subDir}`).map(file => {
-        listOfFiles.push(__dirname + `/FITSdata/${subDir}/${file}`);
-      })
+      try{
+        fs.readdirSync(`${fitsDir}/${subDir}`).map(file => {
+          listOfFiles.push(__dirname + `/FITSdata/${subDir}/${file}`);
+        })
+      }
+      catch(err){
+        console.log(err);
+      }
     })
     const fileString = listOfFiles[Math.floor(Math.random()*listOfFiles.length)];
     res.sendFile(fileString);
