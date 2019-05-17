@@ -65,16 +65,42 @@ app.get('/', function (req, res) {
   
 })
 
+// Get a random FITS image 
+app.get('/getmeafitsimage', (req,res,next) => {
+  const fitsDir = './FITSdata';
+  let listOfFiles = [];
+  if(fs.existsSync(fitsDir)){
+    fs.readdirSync(fitsDir).map(subDir => {
+      fs.readdirSync(`${fitsDir}/${subDir}`).map(file => {
+        listOfFiles.push(__dirname + `/FITSdata/${subDir}/${file}`);
+      })
+    })
+    const fileString = listOfFiles[Math.floor(Math.random()*listOfFiles.length)];
+    res.sendFile(fileString);
+  }
+  else{
+    res.send("No FITS image found");
+  }
+
+})
+
 // Testing for getting FITS-data from GONG's website.
 // DISABLED FOR NOW, SO we dont fetch it again, the ftp server is real slow
 // Estimated time you ask, about 30 minutes for 30 days.
 
-app.get('/ftpTest', (req,res,next) => {
+app.get('/ftpTest/:num?', (req,res,next) => {
   var c = new Client()
   var cProperties = {
     host: "gong2.nso.edu"
   }
+  
   let numberOfDays = 30;
+
+  if(req.params.num)
+    numberOfDays = req.params.num;
+
+  console.log(numberOfDays);
+
   let today = new Date();
   let dateYYYYMM = today.getFullYear().toString() + "0" + (today.getMonth() + 1).toString();
   let listOfThirtyEntries = [];
@@ -89,7 +115,8 @@ app.get('/ftpTest', (req,res,next) => {
     else{
       // This little things is to read the last entry first
       list.reverse().map( index => {
-          listOfThirtyEntries.push(index.name);
+          if(listOfThirtyEntries.length < numberOfDays)
+            listOfThirtyEntries.push(index.name);
       })
       listOfThirtyEntries.reverse();
       if(!fs.existsSync(`./FITSdata/`))
