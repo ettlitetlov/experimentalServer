@@ -81,7 +81,7 @@ app.get('/getmeafitsimage', (req,res,next) => {
       }
     })
     const fileString = listOfFiles[Math.floor(Math.random()*listOfFiles.length)];
-    res.sendFile(fileString);
+    res.download(fileString, fileString.substring(fileString.length - 33));
   }
   else{
     res.send("No FITS image found");
