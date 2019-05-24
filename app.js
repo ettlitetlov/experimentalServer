@@ -1,7 +1,15 @@
-const express = require('express')
-const sharp = require('sharp')
+const express = require('express');
+const sharp = require('sharp');
 var Client = require('ftp');
 const zlib = require('zlib');
+
+/* Part under construction
+require("@babel/register")({
+  presets: ["@babel/preset-env"]
+});
+
+import { Fits, Hdu } from "@hscmap/fits";
+*/
 
 // Reading FITS?
 
@@ -27,6 +35,8 @@ app.use(function(req, res, next) {
 // Defualt endpoint, delivers sunimages from SDO
 app.get('/', function (req, res) {
 
+
+  /*
   // CygnetID;
   const id = 237
 
@@ -61,7 +71,10 @@ app.get('/', function (req, res) {
       .then(() => {
         res.sendFile(__dirname + "\\output.jpg");
       })
-  }));
+  })); 
+  */
+
+  res.send('You are at ROOT');
   
 })
 
@@ -85,6 +98,61 @@ app.get('/getmeafitsimage', (req,res,next) => {
   }
   else{
     res.send("No FITS image found");
+  }
+})
+
+// Get the next fits image that does exist
+app.get('/getmenextfitsimage/:time/:dir', (req,res,next) => {
+  // OpenSpace browsing time, formated: YYYYMMDDHHmm
+  const currentTime = 'mrzqs' + req.params.time.substring(2);
+  //Should be either forward or backwards
+  const direction = req.params.dir;
+  let once = 0;
+  const fitsDir = './FITSdata';
+  if(fs.existsSync(fitsDir)){
+    let found = false;
+    let foundDay = false;
+    fs.readdirSync(fitsDir).map(existingDays => {
+      let nextImage;
+      let leastDifference = 9999;
+      if(existingDays == currentTime.substring(0,currentTime.length-4)){
+        foundDay = true;
+        fs.readdirSync(fitsDir + '/' + existingDays + '/').map(existingTimes => {
+          let numbersFromString = existingTimes.substring(5,11) + existingTimes.substring(12,16);
+          let diff = parseInt(numbersFromString) - parseInt(currentTime.substring(5))
+          if(direction < 0 && -leastDifference < diff < 0 ){
+            leastDifference = diff;
+            nextImage = existingTimes;
+            found = true;
+          }
+          else if(direction > 0 && 0 < diff && diff < leastDifference){
+            leastDifference = diff;
+            nextImage = existingTimes;
+            found = true;
+          }
+        })
+        if(found){
+          once++;
+          return res.send(nextImage);
+        } 
+      }
+      else if(!found && foundDay && direction > 0){
+        foundDay = false;
+        fs.readdirSync(fitsDir + '/' + existingDays + '/').map(existingTimes => {
+          if(once == 0){
+            once++;
+            return res.send(existingTimes);
+          }
+        })
+      }
+    })
+  }
+  else{
+    return res.send('Not found!');
+  }
+
+  if(once < 1){
+    return res.send('Not found!')
   }
 
 })
@@ -250,6 +318,24 @@ function getPreviousMonth(currMonth){
     return (parseInt(currMonth) - 1).toString();
   }
   
+}
+
+//Fetch the next day, expects format: YYYYMMDDXXXX, where x is arbitrary
+// Will return on format YYYYMMDDXXXX
+function getNextDay(currentDay){
+  let day = parseInt(currentDay.substring(6,8));
+  console.log(day);
+  if(day < 29){
+    day++
+    if(day < 10)
+      return currentDay.substring(0,6) + `0${day}0000` ;
+    else
+      return currentDay.substring(0,6) + `${day}0000`;
+  }
+  if(day == 31){
+
+  }
+
 }
 
 app.listen(port, () => console.log(`Example app listening on port ${port}!`))
