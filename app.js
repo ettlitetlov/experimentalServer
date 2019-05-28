@@ -157,6 +157,27 @@ app.get('/getmenextfitsimage/:time/:dir', (req,res,next) => {
 
 })
 
+// Returns a specific if if it does exist expects format xxxxxYYMMDDtHHmmcxxxx_xxx
+app.get('/get/:name', (req,res) => {
+  const want = req.params.name;
+  const fitsDir = './FITSdata';
+  let found = false;
+
+  if(fs.existsSync(fitsDir + '/' + want.substring(0,11))){
+    fs.readdirSync(fitsDir + '/' + want.substring(0,11) + '/').map(toFind => {
+      if(toFind.substring(0,16) == want.substring(0,16)){
+        found = true;
+        return res.sendFile(fitsDir + '/' + want.substring(0,11) + '/' + toFind, { root : __dirname});
+      }
+    })
+  }
+
+  if(!found){
+    return res.send('No such file in database')
+  }
+  
+})
+
 // Testing for getting FITS-data from GONG's website.
 // DISABLED FOR NOW, SO we dont fetch it again, the ftp server is real slow
 // Estimated time you ask, about 30 minutes for 30 days.
@@ -320,22 +341,5 @@ function getPreviousMonth(currMonth){
   
 }
 
-//Fetch the next day, expects format: YYYYMMDDXXXX, where x is arbitrary
-// Will return on format YYYYMMDDXXXX
-function getNextDay(currentDay){
-  let day = parseInt(currentDay.substring(6,8));
-  console.log(day);
-  if(day < 29){
-    day++
-    if(day < 10)
-      return currentDay.substring(0,6) + `0${day}0000` ;
-    else
-      return currentDay.substring(0,6) + `${day}0000`;
-  }
-  if(day == 31){
-
-  }
-
-}
 
 app.listen(port, () => console.log(`Example app listening on port ${port}!`))
