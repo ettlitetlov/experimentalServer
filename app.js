@@ -259,15 +259,18 @@ app.get('/WSA/available', (req,res,next) => {
     if(fs.existsSync(wsaPath + 'PfssIo/') && fs.existsSync(wsaPath + 'PfssOi/') && fs.existsSync(wsaPath + 'ScsOi/')){
       // Picking up random field line set from Pfss OI, using it to choose the other sets.
       fs.readdirSync(wsaPath + 'PfssOi').map((data) => {
-        set.push('PfssOi/' + data);    
+        if(data.substring(data.length - 3, data.length) != "txt")
+          set.push('PfssOi' + data);    
       });
 
       fs.readdirSync(wsaPath + 'PfssIo').map((data) => {
-        set.push('PfssIo/' + data);    
+        if(data.substring(data.length - 3, data.length) != "txt")
+          set.push('PfssIo' + data);    
       });
 
       fs.readdirSync(wsaPath + 'ScsOi').map((data) => {
-        set.push('ScsOi/' + data);    
+        if(data.substring(data.length - 3, data.length) != "txt")
+          set.push('ScsOi' + data);    
       });
       return res.send(set);
     }
