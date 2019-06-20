@@ -289,11 +289,14 @@ app.get('/WSA/available', (req,res,next) => {
 app.get('/WSA/:FL/:time?', (req,res,next) => {
   // If user ask for a timestep, we will modify the field lines to be applicable in 2h in the future of that time.
   let time = "";
-  if(req.params.time)
+  if(req.params.time){
     time = req.params.time;
+  }
   let found = false;
   const fieldLine = req.params.FL;
   const wsaPath = './WSAdata/';
+
+  console.log(time.length);
 
   fs.readdirSync(wsaPath + fieldLine.substring(0,6) + '/').map(file => {
     if(file == fieldLine.substring(6,fieldLine.length) && time.length == 0){
@@ -301,11 +304,12 @@ app.get('/WSA/:FL/:time?', (req,res,next) => {
       return res.download(wsaPath + fieldLine.substring(0,6) + '/' + file);
     }
     else if(file == fieldLine.substring(6,fieldLine.length)){
-      let date = new Date(time.substring(0,4), parseInt(time.substring(5,7))-1, time.substring(8,10), time.substring(11,13), time.substring(14,16), time.substring(17,19),00);
+      let date = new Date(time.substring(0,4), parseInt(time.substring(5,7))-1, time.substring(8,10), time.substring(11,13), time.substring(14,16), time.substring(17,19));
       date.setTime(date.getTime());
       let newTime = date.toISOString();
       found = true;
-      return res.download(wsaPath + fieldLine.substring(0,6) + '/' + file, fieldLine.substring(6,13) + newTime.substring(0,newTime.length - 1));
+      let filename = fieldLine.substring(6,13) + newTime.substring(0,newTime.length - 1) + '.osfls';
+      return res.download(wsaPath + fieldLine.substring(0,6) + '/' + file, filename);
     }
 
   })
