@@ -74,9 +74,10 @@ app.get('/', function (req, res) {
   })); 
   */
 
-  res.send('You are at ROOT');
+  setTimeout(function () { return res.send("You are at ROOT")},3000);
   
 })
+
 
 // Get a random FITS image 
 app.get('/getmeafitsimage', (req,res,next) => {
@@ -103,8 +104,12 @@ app.get('/getmeafitsimage', (req,res,next) => {
 
 // Get the next fits image that does exist
 app.get('/getmenextfitsimage/:time/:dir', (req,res,next) => {
+  
   // OpenSpace browsing time, formated: YYYYMMDDHHmm
   const currentTime = 'mrzqs' + req.params.time.substring(2);
+  let time = new Date();
+  // If you want to log
+  //console.log(time.getUTCDate() + "/" + (time.getUTCMonth()+1) + " " + (time.getUTCHours()-4) + ":" + time.getUTCMinutes() + "." + time.getUTCSeconds() + " GET-Request at: /getmenextfitsimage/" + currentTime);
   //Should be either forward or backwards
   const direction = req.params.dir;
   let once = 0;
@@ -160,6 +165,9 @@ app.get('/getmenextfitsimage/:time/:dir', (req,res,next) => {
 // Returns a specific if if it does exist expects format xxxxxYYMMDDtHHmmcxxxx_xxx
 app.get('/get/:name', (req,res) => {
   const want = req.params.name;
+  let time = new Date();
+  // Logging
+  //console.log(time.getUTCDate() + "/" + (time.getUTCMonth()+1) + " " + (time.getUTCHours()-4) + ":" + time.getUTCMinutes() + "." + time.getUTCSeconds() +" GET-Request at: /get/" + want);
   const fitsDir = './FITSdata';
   let found = false;
 
@@ -167,7 +175,7 @@ app.get('/get/:name', (req,res) => {
     fs.readdirSync(fitsDir + '/' + want.substring(0,11) + '/').map(toFind => {
       if(toFind.substring(0,16) == want.substring(0,16)){
         found = true;
-        return res.sendFile(fitsDir + '/' + want.substring(0,11) + '/' + toFind, { root : __dirname});
+        return res.sendFile(fitsDir + '/' + want.substring(0,11) + '/' + toFind, { root : __dirname}); 
       }
     })
   }
@@ -241,6 +249,70 @@ app.get('/ftpTest/:num?', (req,res,next) => {
   })
 })
 
+// Get available field lines
+app.get('/WSA/available', (req,res,next) => {
+
+  let set = [];
+  const wsaPath = './WSAdata/';
+  if(fs.existsSync(wsaPath)){
+
+    if(fs.existsSync(wsaPath + 'PfssIo/') && fs.existsSync(wsaPath + 'PfssOi/') && fs.existsSync(wsaPath + 'ScsOi/')){
+      // Picking up random field line set from Pfss OI, using it to choose the other sets.
+      fs.readdirSync(wsaPath + 'PfssOi').map((data) => {
+        set.push('PfssOi/' + data);    
+      });
+
+      fs.readdirSync(wsaPath + 'PfssIo').map((data) => {
+        set.push('PfssIo/' + data);    
+      });
+
+      fs.readdirSync(wsaPath + 'ScsOi').map((data) => {
+        set.push('ScsOi/' + data);    
+      });
+      return res.send(set);
+    }
+    else{
+      return res.send("Dataset not complete");
+    }
+  }
+  else{
+    return res.send("No data found");
+  }
+})
+
+// Get a specific field line given the time
+// EX: PfssOistep25_2019-05-02T19-59-57.120.osfls
+// Time expected like this: YYYY-MM-DDThh:mm:ssZ same as global::timeManager.time().ISO8601() in openspace
+app.get('/WSA/:FL/:time?', (req,res,next) => {
+  // If user ask for a timestep, we will modify the field lines to be applicable in 2h in the future of that time.
+  let time = "";
+  if(req.params.time)
+    time = req.params.time;
+  let found = false;
+  const fieldLine = req.params.FL;
+  const wsaPath = './WSAdata/';
+
+  fs.readdirSync(wsaPath + fieldLine.substring(0,6) + '/').map(file => {
+    if(file == fieldLine.substring(6,fieldLine.length) && time.length == 0){
+      found = true;
+      return res.download(wsaPath + fieldLine.substring(0,6) + '/' + file);
+    }
+    else if(file == fieldLine.substring(6,fieldLine.length)){
+      let date = new Date(time.substring(0,4), parseInt(time.substring(5,7))-1, time.substring(8,10), time.substring(11,13), time.substring(14,16), time.substring(17,19),00);
+      date.setTime(date.getTime());
+      let newTime = date.toISOString();
+      found = true;
+      return res.download(wsaPath + fieldLine.substring(0,6) + '/' + file, fieldLine.substring(6,13) + newTime.substring(0,newTime.length - 1));
+    }
+
+  })
+
+  if(!found){
+    return res.send("No such file in directory.");
+  }
+
+})
+
 // Endpoint to delete the directory with all fitsdata
 app.get('/deleteAllFrknData', (req,res,next) => {
   fs.rmdirSync('FITSdata', (err) => {
@@ -276,6 +348,7 @@ function unzipDirInPlaceAsync(dir){
     }
   });
 }
+
 
 function fetchFTPfiles(c,listOfDays){
   let monthlyObject = Object.assign({}, listOfDays);
