@@ -296,8 +296,6 @@ app.get('/WSA/:FL/:time?', (req,res,next) => {
   const fieldLine = req.params.FL;
   const wsaPath = './WSAdata/';
 
-  console.log(time.length);
-
   fs.readdirSync(wsaPath + fieldLine.substring(0,6) + '/').map(file => {
     if(file == fieldLine.substring(6,fieldLine.length) && time.length == 0){
       found = true;
