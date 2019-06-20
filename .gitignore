@@ -8,6 +8,6 @@ node_modules/
 FITSdata/
 
 # Ignore WSA folder just in case
-WSAdata/PfssIo/*
-WSAdata/PfssOi/*
-WSAdata/ScsOi/*
+WSAdata/PfssIo/*.osfls
+WSAdata/PfssOi/*.osfls
+WSAdata/ScsOi/*.osfls
