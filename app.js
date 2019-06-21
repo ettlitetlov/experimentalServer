@@ -250,7 +250,14 @@ app.get('/ftpTest/:num?', (req,res,next) => {
 })
 
 // Get available field lines
-app.get('/WSA/available', (req,res,next) => {
+app.get('/WSA/available/:type?', (req,res,next) => {
+
+  let type = "";
+  if(req.params.type){
+    type = req.params.type;
+    type = type.toLowerCase();
+    console.log(type);
+  }
 
   let set = [];
   const wsaPath = './WSAdata/';
@@ -258,20 +265,27 @@ app.get('/WSA/available', (req,res,next) => {
 
     if(fs.existsSync(wsaPath + 'PfssIo/') && fs.existsSync(wsaPath + 'PfssOi/') && fs.existsSync(wsaPath + 'ScsOi/')){
       // Picking up random field line set from Pfss OI, using it to choose the other sets.
-      fs.readdirSync(wsaPath + 'PfssOi').map((data) => {
-        if(data.substring(data.length - 3, data.length) != "txt")
-          set.push('PfssOi' + data);    
-      });
+      if(type.length = 0 || type == "pfssoi"){
+        fs.readdirSync(wsaPath + 'PfssOi').map((data) => {
+          if(data.substring(data.length - 3, data.length) != "txt")
+            set.push('PfssOi' + data);    
+        });
+      }
 
-      fs.readdirSync(wsaPath + 'PfssIo').map((data) => {
-        if(data.substring(data.length - 3, data.length) != "txt")
-          set.push('PfssIo' + data);    
-      });
+      if(type.length = 0 || type == "pfssio"){
+        fs.readdirSync(wsaPath + 'PfssIo').map((data) => {
+          if(data.substring(data.length - 3, data.length) != "txt")
+            set.push('PfssIo' + data);    
+        });
+      }
 
-      fs.readdirSync(wsaPath + 'ScsOi').map((data) => {
-        if(data.substring(data.length - 3, data.length) != "txt")
-          set.push('ScsOi' + data);    
-      });
+      if(type.length = 0 || type == "scsoi"){
+        fs.readdirSync(wsaPath + 'ScsOi').map((data) => {
+          if(data.substring(data.length - 3, data.length) != "txt")
+            set.push('ScsOi' + data);    
+        });
+      }
+
       return res.send(set);
     }
     else{
