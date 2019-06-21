@@ -322,7 +322,6 @@ app.get('/WSA/:FL/:time?', (req,res,next) => {
       let newTime = date.toISOString();
       found = true;
       let filename = fieldLine.substring(6,13) + newTime.substring(0,newTime.length - 1).replace(/[:]/g, '-') + '.osfls';
-      console.log(filename);
       return res.download(wsaPath + fieldLine.substring(0,6) + '/' + file, filename);
     }
 
