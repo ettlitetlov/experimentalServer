@@ -256,7 +256,7 @@ app.get('/WSA/available/:type?', (req,res,next) => {
   if(req.params.type){
     type = req.params.type;
     type = type.toLowerCase();
-    console.log(type);
+    type = type.replace(/[^a-z]/, '');
   }
 
   let set = [];
