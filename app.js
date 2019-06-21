@@ -259,27 +259,28 @@ app.get('/WSA/available/:type?', (req,res,next) => {
     type = type.replace(/[^a-z]/, '');
   }
 
+  console.log(type.length);
   let set = [];
   const wsaPath = './WSAdata/';
   if(fs.existsSync(wsaPath)){
 
     if(fs.existsSync(wsaPath + 'PfssIo/') && fs.existsSync(wsaPath + 'PfssOi/') && fs.existsSync(wsaPath + 'ScsOi/')){
       // Picking up random field line set from Pfss OI, using it to choose the other sets.
-      if(type.length = 0 || type == "pfssoi"){
+      if(type.length == 0 || type == "pfssoi"){
         fs.readdirSync(wsaPath + 'PfssOi').map((data) => {
           if(data.substring(data.length - 3, data.length) != "txt")
             set.push('PfssOi' + data);    
         });
       }
 
-      if(type.length = 0 || type == "pfssio"){
+      if(type.length == 0 || type == "pfssio"){
         fs.readdirSync(wsaPath + 'PfssIo').map((data) => {
           if(data.substring(data.length - 3, data.length) != "txt")
             set.push('PfssIo' + data);    
         });
       }
 
-      if(type.length = 0 || type == "scsoi"){
+      if(type.length == 0 || type == "scsoi"){
         fs.readdirSync(wsaPath + 'ScsOi').map((data) => {
           if(data.substring(data.length - 3, data.length) != "txt")
             set.push('ScsOi' + data);    
