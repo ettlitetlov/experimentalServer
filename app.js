@@ -266,23 +266,23 @@ app.get('/WSA/available/:type?', (req,res,next) => {
 
     if(fs.existsSync(wsaPath + 'PfssIo/') && fs.existsSync(wsaPath + 'PfssOi/') && fs.existsSync(wsaPath + 'ScsOi/')){
       // Picking up random field line set from Pfss OI, using it to choose the other sets.
-      if(type.length == 0 || type == "pfssoi"){
+      if(type.length == 0 || type == 'pfssoi'){
         fs.readdirSync(wsaPath + 'PfssOi').map((data) => {
-          if(data.substring(data.length - 3, data.length) != "txt")
+          if(data.substring(data.length - 3, data.length) != 'txt')
             set.push('PfssOi' + data);    
         });
       }
 
-      if(type.length == 0 || type == "pfssio"){
+      if(type.length == 0 || type == 'pfssio'){
         fs.readdirSync(wsaPath + 'PfssIo').map((data) => {
-          if(data.substring(data.length - 3, data.length) != "txt")
+          if(data.substring(data.length - 3, data.length) != 'txt')
             set.push('PfssIo' + data);    
         });
       }
 
-      if(type.length == 0 || type == "scsoi"){
+      if(type.length == 0 || type == 'scsoi'){
         fs.readdirSync(wsaPath + 'ScsOi').map((data) => {
-          if(data.substring(data.length - 3, data.length) != "txt")
+          if(data.substring(data.length - 3, data.length) != 'txt')
             set.push('ScsOi' + data);    
         });
       }
@@ -290,11 +290,81 @@ app.get('/WSA/available/:type?', (req,res,next) => {
       return res.send(set);
     }
     else{
-      return res.send("Dataset not complete");
+      return res.send('Dataset not complete');
     }
   }
   else{
-    return res.send("No data found");
+    return res.send('No data found');
+  }
+})
+
+// DUMMY ENDPOINT
+// Gives the user an array of times available on the server side.
+// Time expected like this: YYYY-MM-DDThh:mm:ssZ same as global::timeManager.time().ISO8601() in openspace
+// num is the number of elements to populate, defaults to 30.
+// TEST TIMESTAMP: 2019-05-02T12:00:00:00
+app.get('/WSA/times/:time/:num?', (req,res,next) => {
+
+  // Set the variables
+  let numberOfTimestamps = 30;
+  let time = req.params.time;
+  let date = new Date(time.substring(0,4), parseInt(time.substring(5,7))-1, time.substring(8,10), time.substring(11,13), time.substring(14,16), time.substring(17,19));
+  
+  // Four hour steps
+  let hour = 1000 * 3600;
+
+  // Set the date to current time;
+  date.setTime(date.getTime() - hour * 4);
+  
+  if(req.params.num){
+    numberOfTimestamps = req.params.num;
+  }
+  // What we send to the requester
+  let listToSend = [numberOfTimestamps];
+
+  let step = - Math.round((numberOfTimestamps / 2) -0.51);
+  let startingDate = new Date(date.getTime());
+
+  for(let i = 0; i < numberOfTimestamps; i++){
+    date.setTime(startingDate.getTime() + hour * 4 * step);
+    let newTime = date.toISOString();
+    listToSend[i] = newTime.substring(0,newTime.length - 1).replace(/[:]/g, '-');
+    step++;
+  }
+  res.send(listToSend);
+})
+
+// This is dummy endpoint returning just one file with the desired timestep and type
+app.get('/WSA/fieldline/:timestep/:type', (req,res,next) => {
+  let timeStep = req.params.timestep;
+
+  // Init type and clean shit up
+  let type = req.params.type;
+  type = type.toLowerCase();
+  type = type.replace(/[^a-z]/, '');
+
+  const wsaPath = './WSAdata/';
+
+  if(type == 'pfssoi'){
+    fs.readdirSync(wsaPath + 'PfssOi').map(data => {
+      if(data.substring(data.length - 3, data.length) != 'txt')
+        return res.download(wsaPath + 'PfssOi' + '/' + data, timeStep + '.osfls');
+    });
+  }
+  else if(type == 'pfssio'){
+    fs.readdirSync(wsaPath + 'PfssIo').map(data => {
+      if(data.substring(data.length - 3, data.length) != 'txt')
+        return res.download(wsaPath + 'PfssIo' + '/' + data, timeStep + '.osfls');  
+    });
+  }
+  else if(type == 'scsoi'){
+    fs.readdirSync(wsaPath + 'ScsOi').map(data => {
+      if(data.substring(data.length - 3, data.length) != 'txt')
+        return res.download(wsaPath + 'ScsOi' + '/' + data, timeStep + '.osfls');    
+    });
+  }
+  else{
+    return res.send('File not found, bro!')
   }
 })
 
