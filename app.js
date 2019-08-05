@@ -259,7 +259,6 @@ app.get('/WSA/available/:type?', (req,res,next) => {
     type = type.replace(/[^a-z]/, '');
   }
 
-  console.log(type.length);
   let set = [];
   const wsaPath = './WSAdata/';
   if(fs.existsSync(wsaPath)){
@@ -335,32 +334,37 @@ app.get('/WSA/times/:time/:num?', (req,res,next) => {
 })
 
 // This is dummy endpoint returning just one file with the desired timestep and type
-app.get('/WSA/fieldline/:timestep/:type', (req,res,next) => {
+app.get('/WSA/fieldline/:type/:timestep', (req,res,next) => {
   let timeStep = req.params.timestep;
+  timeStep = timeStep.replace(/\./g,'-');
 
   // Init type and clean shit up
   let type = req.params.type;
-  type = type.toLowerCase();
-  type = type.replace(/[^a-z]/, '');
 
   const wsaPath = './WSAdata/';
 
-  if(type == 'pfssoi'){
-    fs.readdirSync(wsaPath + 'PfssOi').map(data => {
-      if(data.substring(data.length - 3, data.length) != 'txt')
-        return res.download(wsaPath + 'PfssOi' + '/' + data, timeStep + '.osfls');
-    });
-  }
-  else if(type == 'pfssio'){
+  if(type == 'WSA_Fieldlines_PFSS_IO'){
     fs.readdirSync(wsaPath + 'PfssIo').map(data => {
-      if(data.substring(data.length - 3, data.length) != 'txt')
-        return res.download(wsaPath + 'PfssIo' + '/' + data, timeStep + '.osfls');  
+      if(data.substring(data.length - 3, data.length) != 'txt'){
+        let filename = timeStep.toString();
+        return res.download(wsaPath + 'PfssIo' + '/' + data, filename);
+      }
     });
   }
-  else if(type == 'scsoi'){
+  else if(type == 'WSA_Fieldlines_PFSS_OI'){
+    fs.readdirSync(wsaPath + 'PfssOi').map(data => {
+      if(data.substring(data.length - 3, data.length) != 'txt'){
+        let filename = timeStep.toString() + '.osfls';
+        return res.download(wsaPath + 'PfssOi' + '/' + data, filename);  
+      }
+    });
+  }
+  else if(type == 'WSA_Fieldlines_SCS_OI'){
     fs.readdirSync(wsaPath + 'ScsOi').map(data => {
-      if(data.substring(data.length - 3, data.length) != 'txt')
-        return res.download(wsaPath + 'ScsOi' + '/' + data, timeStep + '.osfls');    
+      if(data.substring(data.length - 3, data.length) != 'txt'){
+        let filename = timeStep.toString() + '.osfls';
+        return res.download(wsaPath + 'ScsOi' + '/' + data, filename);    
+      }
     });
   }
   else{
@@ -377,6 +381,7 @@ app.get('/WSA/:FL/:time?', (req,res,next) => {
   if(req.params.time){
     time = req.params.time;
   }
+  
   let found = false;
   const fieldLine = req.params.FL;
   const wsaPath = './WSAdata/';
@@ -384,6 +389,7 @@ app.get('/WSA/:FL/:time?', (req,res,next) => {
   fs.readdirSync(wsaPath + fieldLine.substring(0,6) + '/').map(file => {
     if(file == fieldLine.substring(6,fieldLine.length) && time.length == 0){
       found = true;
+      
       return res.download(wsaPath + fieldLine.substring(0,6) + '/' + file);
     }
     else if(file == fieldLine.substring(6,fieldLine.length)){
@@ -398,9 +404,9 @@ app.get('/WSA/:FL/:time?', (req,res,next) => {
   })
 
   if(!found){
+    console.log("Not found!");
     return res.send("No such file in directory.");
   }
-
 })
 
 // Endpoint to delete the directory with all fitsdata
