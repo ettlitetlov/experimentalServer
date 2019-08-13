@@ -268,21 +268,22 @@ app.get('/WSA/available/:type?', (req,res,next) => {
       if(type.length == 0 || type == 'pfssoi'){
         fs.readdirSync(wsaPath + 'PfssOi').map((data) => {
           if(data.substring(data.length - 3, data.length) != 'txt')
-            set.push('PfssOi' + data);    
+            //set.push('PfssOi' + data);    
+            set.push(data.substring(0,23));    
         });
       }
 
       if(type.length == 0 || type == 'pfssio'){
         fs.readdirSync(wsaPath + 'PfssIo').map((data) => {
           if(data.substring(data.length - 3, data.length) != 'txt')
-            set.push('PfssIo' + data);    
+            set.push(data.substring(0,23));    
         });
       }
 
       if(type.length == 0 || type == 'scsoi'){
         fs.readdirSync(wsaPath + 'ScsOi').map((data) => {
           if(data.substring(data.length - 3, data.length) != 'txt')
-            set.push('ScsOi' + data);    
+          set.push(data.substring(0,23));    
         });
       }
 
@@ -386,20 +387,30 @@ app.get('/WSA/:FL/:time?', (req,res,next) => {
   const fieldLine = req.params.FL;
   const wsaPath = './WSAdata/';
 
-  fs.readdirSync(wsaPath + fieldLine.substring(0,6) + '/').map(file => {
-    if(file == fieldLine.substring(6,fieldLine.length) && time.length == 0){
+  let fltype = fieldLine.substring(0,6);
+  let timestamp = fieldLine.substring(6,fieldLine.length);
+  if(fltype != "PfssOi" && fltype != "PfssIo"){
+    fltype = fltype.substring(0,5);
+    timestamp = fieldLine.substring(5,fieldLine.length);
+  } 
+
+
+
+
+  fs.readdirSync(wsaPath + fltype + '/').map(file => {
+    if(file == timestamp && time.length == 0){
       found = true;
       
-      return res.download(wsaPath + fieldLine.substring(0,6) + '/' + file);
+      return res.download(wsaPath + fltype + '/' + file);
     }
-    else if(file == fieldLine.substring(6,fieldLine.length)){
+    else if(file == timestamp){
       let date = new Date(time.substring(0,4), parseInt(time.substring(5,7))-1, time.substring(8,10), time.substring(11,13), time.substring(14,16), time.substring(17,19));
       date.setTime(date.getTime());
       let newTime = date.toISOString();
       found = true;
       //let filename = fieldLine.substring(6,13) + newTime.substring(0,newTime.length - 1).replace(/[:]/g, '-') + '.osfls';
       let filename = newTime.substring(0,newTime.length - 1).replace(/[:]/g, '-') + '.osfls';
-      return res.download(wsaPath + fieldLine.substring(0,6) + '/' + file, filename);
+      return res.download(wsaPath + fltype + '/' + file, filename);
     }
 
   })
