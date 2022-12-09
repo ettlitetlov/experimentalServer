@@ -11,7 +11,7 @@
   "dependencies": {
     "@hscmap/fits": "^2.1.2",
     "es6-promise": "^4.2.6",
-    "express": "^4.16.4",
+    "express": "^4.18.2",
     "ftp": "^0.3.10",
     "gzip-js": "^0.3.2",
     "python": "0.0.4",
